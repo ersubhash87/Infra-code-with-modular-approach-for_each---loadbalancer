@@ -1,0 +1,43 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: Terraform_CI
+  displayName: Terraform CI Stage
+  jobs:
+  - job: terraform
+    displayName: Terraform Job
+    steps:
+
+    - checkout: self
+
+    - task: TerraformInstaller@1
+      inputs:
+        terraformVersion: $(terraformVersion)
+
+    - task: TerraformTaskV4@4
+      displayName: Terraform Init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'azure-sp-conn'
+        backendAzureRmResourceGroupName: 'tfstate-rg'
+        backendAzureRmStorageAccountName: 'tfstateaccount'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'terraform.tfstate'
+
+    - task: TerraformTaskV4@4
+      displayName: Terraform Validate
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+
+    - task: TerraformTaskV4@4
+      displayName: Terraform Plan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        environmentServiceNameAzureRM: 'azure-sp-conn'
